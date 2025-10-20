@@ -4,7 +4,7 @@ The device utilizes a microprocessor (currently prototyping on an Arduino Nano),
 The scale goes as follows:
 
     | Scale | Range | Shortened ver. |
-    | :------- | :------: | -------: |
+    | :-------- | :-------: | --------: |
     | Minimal | x < 0.05 g | MNML |
     | Weak | 0.05 < x < 0.2 | WEAK |
     | Moderate | 0.2 < x < 0.4 | MDRT |
