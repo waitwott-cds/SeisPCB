@@ -62,6 +62,15 @@ void setup() {
   Serial.println("Finished setup");
 }
 
+String getAccelIntensity(float val) {
+
+      if (val < 0.05) return "MNML";
+      else if (val < 0.2) return "WEAK";
+      else if (val < 0.4) return "MDRT";
+      else if (val < 0.7) return "STRG";
+      else return "SEVR";
+    }
+
 void loop() {
   sensors_event_t event;
   accel.getEvent(&event);
@@ -82,29 +91,37 @@ void loop() {
   display.setCursor(1, 8); display.println(X, 3);
   display.setCursor(45, 8); display.println(Y, 3);
   display.setCursor(90, 8); display.println(Z, 3);
-  display.setCursor(10, 20); display.println("MaxG");
-  display.drawLine(40, 20, 40, 55, SSD1306_WHITE);
+  display.setCursor(0, 20); display.println("MaxG");
+  display.setCursor(40, 20); display.println("X");
+  display.setCursor(70, 20); display.println("Y");
+  display.setCursor(100, 20); display.println("Z");
+  display.drawLine(30, 20, 30, 55, SSD1306_WHITE);
   display.display();
-  
+
   // update intensity every 3s
   static unsigned long lastUpdate = 0;
   if (millis() - lastUpdate >= 3000) {
     lastUpdate = millis();
-    display.fillRect(4, 30, 110, 40, BLACK);
+    display.fillRect(0, 30, 130, 40, BLACK);
     display.setTextColor(WHITE);
     
     float maxG = max(fabs(X), max(fabs(Y), fabs(Z)));
-    display.setCursor(10, 37);
+    float abX = fabs(X);
+    float abY = fabs(Y);
+    float abZ = fabs(Z);
+
     display.setTextSize(1);
-    
-    if (maxG < 0.05) display.println("MNML");
-    else if (maxG < 0.2) display.println("WEAK");
-    else if (maxG < 0.4) display.println("MDRT");
-    else if (maxG < 0.7) display.println("STRG");
-    else display.println("SEVR");
+    display.setCursor(0, 37);
+    display.println(getAccelIntensity(maxG));
+    display.setCursor(35, 37);
+    display.println(getAccelIntensity(abX));
+    display.setCursor(65, 37);
+    display.println(getAccelIntensity(abY));
+    display.setCursor(95, 37);
+    display.println(getAccelIntensity(abZ));
+
     
     display.display();
   }
-  
-  delay(20);
+  delay(1);
 }
