@@ -123,5 +123,5 @@ void loop() {
     
     display.display();
   }
-  delay(1);
+  delay(20);
 }
