@@ -62,66 +62,96 @@ void setup() {
   Serial.println("Finished setup");
 }
 
-String getAccelIntensity(float val) {
+// bytes used to save space
+byte accelLvl(float val) {
+  if (val < 0.05) return 0;
+  else if (val < 0.2) return 1;
+  else if (val < 0.4) return 2;
+  else if (val < 0.7) return 3;
+  else return 4;
+}
 
-      if (val < 0.05) return "MNML";
-      else if (val < 0.2) return "WEAK";
-      else if (val < 0.4) return "MDRT";
-      else if (val < 0.7) return "STRG";
-      else return "SEVR";
-    }
+// now this returns label from lvl
+const char* accelLabel(byte lvl) {
+  static const char* labels[] = {"MNML", "WEAK", "MDRT", "STRG", "SEVR"};
+  return labels[lvl];
+}
+
+bool blinkState = false;
+unsigned long lastBlinkTime = 0;
+
+void alertBlink(float maxG, float abX, float abY, float abZ) {
+  static unsigned long lastToggle = 0;
+  const unsigned long interval = 200;
+
+  byte lvlMax = accelLvl(maxG);
+  byte lvlX = accelLvl(abX);
+  byte lvlY = accelLvl(abY);
+  byte lvlZ = accelLvl(abZ);
+
+  if (millis() - lastToggle >= interval) {
+    lastToggle = millis();
+    blinkState = !blinkState;
+
+    display.fillRect(0, 50, 130, 12, BLACK);
+
+    if (lvlMax >= 2 && blinkState) display.fillRect(0, 50, 25, 12, WHITE);
+    if (lvlX   >= 2 && blinkState) display.fillRect(35, 50, 25, 12, WHITE);
+    if (lvlY   >= 2 && blinkState) display.fillRect(65, 50, 25, 12, WHITE);
+    if (lvlZ   >= 2 && blinkState) display.fillRect(95, 50, 25, 12, WHITE);
+
+    display.display();
+  }
+}
 
 void loop() {
   sensors_event_t event;
   accel.getEvent(&event);
-  
-  // apply calibration
+
   float X = event.acceleration.x - calX;
   float Y = event.acceleration.y - calY;
   float Z = event.acceleration.z - calZ;
-  
-  Serial.print(X); Serial.print(" ");
-  Serial.print(Y); Serial.print(" ");
-  Serial.println(Z);
-  
-  // update accel
+
+  float abX = fabs(X);
+  float abY = fabs(Y);
+  float abZ = fabs(Z);
+  float maxG = max(abX, max(abY, abZ));
+
+  byte lvlMax = accelLvl(maxG);
+  byte lvlX   = accelLvl(abX);
+  byte lvlY   = accelLvl(abY);
+  byte lvlZ   = accelLvl(abZ);
+
   display.fillRect(1, 8, 125, 10, BLACK);
   display.setTextSize(1);
   display.setTextColor(WHITE);
   display.setCursor(1, 8); display.println(X, 3);
   display.setCursor(45, 8); display.println(Y, 3);
   display.setCursor(90, 8); display.println(Z, 3);
+
   display.setCursor(0, 20); display.println("MaxG");
   display.setCursor(40, 20); display.println("X");
   display.setCursor(70, 20); display.println("Y");
   display.setCursor(100, 20); display.println("Z");
-  display.drawLine(30, 20, 30, 55, SSD1306_WHITE);
   display.display();
 
-  // update intensity every 3s
   static unsigned long lastUpdate = 0;
-  if (millis() - lastUpdate >= 3000) {
+  if (millis() - lastUpdate >= 500) {
     lastUpdate = millis();
     display.fillRect(0, 30, 130, 40, BLACK);
     display.setTextColor(WHITE);
-    
-    float maxG = max(fabs(X), max(fabs(Y), fabs(Z)));
-    float abX = fabs(X);
-    float abY = fabs(Y);
-    float abZ = fabs(Z);
-
     display.setTextSize(1);
-    display.setCursor(0, 37);
-    display.println(getAccelIntensity(maxG));
-    display.setCursor(35, 37);
-    display.println(getAccelIntensity(abX));
-    display.setCursor(65, 37);
-    display.println(getAccelIntensity(abY));
-    display.setCursor(95, 37);
-    display.println(getAccelIntensity(abZ));
 
-    
+    display.setCursor(0, 37);  display.println(accelLabel(lvlMax));
+    display.setCursor(35, 37); display.println(accelLabel(lvlX));
+    display.setCursor(65, 37); display.println(accelLabel(lvlY));
+    display.setCursor(95, 37); display.println(accelLabel(lvlZ));
+
     display.display();
   }
-  delay(20);
+
+  alertBlink(maxG, abX, abY, abZ);
 }
+
+
+
